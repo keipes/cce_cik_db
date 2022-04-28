@@ -1,10 +1,10 @@
 use std::fs;
 use std::path::Path;
 use tantivy::schema::{Schema, TEXT, STORED, STRING, Field, INDEXED};
-use tantivy::{Index, Document, IndexWriter, IndexReader, DocAddress, Score, Term};
+use tantivy::{Index, Document, IndexWriter, IndexReader};
 use tantivy::collector::TopDocs;
 use tantivy::directory::MmapDirectory;
-use tantivy::query::{Query, QueryParser};
+use tantivy::query::{QueryParser};
 
 const CIK: &str = "cik";
 const NAMES: &str = "names";
