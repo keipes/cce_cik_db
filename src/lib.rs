@@ -1,4 +1,3 @@
-use std::fs;
 use std::path::Path;
 use tantivy::schema::{Schema, TEXT, STORED, STRING, Field, INDEXED};
 use tantivy::{Index, Document, IndexWriter, IndexReader};
@@ -33,17 +32,7 @@ impl CikIndex {
         let schema = default_schema();
         let directory = MmapDirectory::open(path).unwrap();
 
-        let index = match Index::open_or_create(directory.clone(), schema.clone()) {
-            Ok(idx) => { idx }
-            Err(e) => {
-                log::error!("Failed to open DB: {:?}", e);
-                log::info!("Deleting existing DB.");
-                fs::remove_dir_all(path);
-                fs::create_dir_all(path);
-                log::info!("Creating db.");
-                Index::open_or_create(directory.clone(), schema.clone()).unwrap()
-            }
-        };
+        let index = Index::open_or_create(directory.clone(), schema.clone()).unwrap();
 
         let reader = index.reader().unwrap();
         let cik_field = schema.get_field(CIK).unwrap();
