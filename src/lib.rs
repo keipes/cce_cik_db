@@ -31,7 +31,6 @@ impl CikIndex {
     pub fn at_location(path: &Path) -> CikIndex {
         let schema = default_schema();
         let directory = MmapDirectory::open(path).unwrap();
-
         let index = Index::open_or_create(directory.clone(), schema.clone()).unwrap();
 
         let reader = index.reader().unwrap();
