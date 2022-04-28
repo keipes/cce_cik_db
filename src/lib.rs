@@ -70,15 +70,37 @@ impl CikIndex {
         writer.commit().unwrap();
     }
 
-    pub fn search(&self, query: &str) {
+    pub fn search(&self, query: &str, limit: usize) -> CompanyQueryResult {
         let searcher = self.reader.searcher();
         let q = self.parser.parse_query(remove_special(query).as_str()).unwrap();
-        let top_docs = searcher.search(&q, &TopDocs::with_limit(10)).unwrap();
+        let top_docs = searcher.search(&q, &TopDocs::with_limit(limit)).unwrap();
+        let mut companies: Vec<Company> = Vec::with_capacity(top_docs.len());
         for (_score, doc_address) in top_docs {
             // Retrieve the actual content of documents given its `doc_address`.
             let retrieved_doc = searcher.doc(doc_address).unwrap();
+
+            let cik: u64 = retrieved_doc.get_first(self.cik_field).map_or(0, |v| {v.as_u64().unwrap_or(0)});
+            let mut names: Vec<String> = Vec::new();
+            for item in retrieved_doc.get_all(self.name_field) {
+                names.push(String::from(item.as_text().unwrap_or("err")));
+            }
+            let mut tickers: Vec<String> = Vec::new();
+            for item in retrieved_doc.get_all(self.ticker_field) {
+                tickers.push(String::from(item.as_text().unwrap_or("err")));
+            }
+
+            companies.push(Company {
+                cik,
+                names,
+                tickers
+            });
+
+
             log::info!("{} {}", _score, self.schema.to_json(&retrieved_doc));
+
+
         };
+        CompanyQueryResult { companies }
     }
 }
 
@@ -86,6 +108,16 @@ fn remove_special(query: &str) -> String {
     let mut q = String::from(query);
     q.retain(|c| c.is_digit(10) || c.is_alphabetic());
     q
+}
+
+pub struct CompanyQueryResult {
+    companies: Vec<Company>
+}
+
+pub struct Company {
+    cik: u64,
+    names: Vec<String>,
+    tickers: Vec<String>
 }
 
 #[cfg(test)]
