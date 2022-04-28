@@ -1,4 +1,5 @@
 use std::path::Path;
+use serde_json::{json, Value};
 use tantivy::schema::{Schema, TEXT, STORED, STRING, Field, INDEXED};
 use tantivy::{Index, Document, IndexWriter, IndexReader};
 use tantivy::collector::TopDocs;
@@ -70,11 +71,11 @@ impl CikIndex {
         writer.commit().unwrap();
     }
 
-    pub fn search(&self, query: &str, limit: usize) -> CompanyQueryResult {
+    pub fn search(&self, query: &str, limit: usize) -> Vec<Value> {
         let searcher = self.reader.searcher();
         let q = self.parser.parse_query(remove_special(query).as_str()).unwrap();
         let top_docs = searcher.search(&q, &TopDocs::with_limit(limit)).unwrap();
-        let mut companies: Vec<Company> = Vec::with_capacity(top_docs.len());
+        let mut companies: Vec<Value> = Vec::with_capacity(top_docs.len());
         for (_score, doc_address) in top_docs {
             // Retrieve the actual content of documents given its `doc_address`.
             let retrieved_doc = searcher.doc(doc_address).unwrap();
@@ -88,19 +89,13 @@ impl CikIndex {
             for item in retrieved_doc.get_all(self.ticker_field) {
                 tickers.push(String::from(item.as_text().unwrap_or("err")));
             }
-
-            companies.push(Company {
-                cik,
-                names,
-                tickers
-            });
-
-
-            log::info!("{} {}", _score, self.schema.to_json(&retrieved_doc));
-
-
+            companies.push(json!({
+                "cik": cik,
+                "names": names,
+                "tickers": tickers
+            }));
         };
-        CompanyQueryResult { companies }
+        companies
     }
 }
 
@@ -108,16 +103,6 @@ fn remove_special(query: &str) -> String {
     let mut q = String::from(query);
     q.retain(|c| c.is_digit(10) || c.is_alphabetic());
     q
-}
-
-pub struct CompanyQueryResult {
-    companies: Vec<Company>
-}
-
-pub struct Company {
-    cik: u64,
-    names: Vec<String>,
-    tickers: Vec<String>
 }
 
 #[cfg(test)]
