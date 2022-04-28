@@ -62,7 +62,7 @@ impl CikIndex {
     }
 
     pub fn create_writer(&self) -> IndexWriter {
-        self.index.writer(100_000_000).unwrap()
+        self.index.writer(512_000_000).unwrap()
     }
 
     pub fn insert(&self, writer: &IndexWriter, cik: u64, tickers: &Vec<String>, names: &Vec<String>) {
@@ -74,7 +74,7 @@ impl CikIndex {
         for name in names {
             document.add_text(self.name_field, name);
         }
-        writer.delete_term(Term::from_field_u64(self.cik_field, cik));
+        // writer.delete_term(Term::from_field_u64(self.cik_field, cik));
         writer.add_document(document).unwrap();
     }
 
