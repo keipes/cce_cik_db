@@ -73,7 +73,7 @@ impl CikIndex {
 
     pub fn search(&self, query: &str, limit: usize) -> Vec<Value> {
         let searcher = self.reader.searcher();
-        let q = self.parser.parse_query(remove_special(query).as_str()).unwrap();
+        let q = self.parser.parse_query(query).unwrap();
         let top_docs = searcher.search(&q, &TopDocs::with_limit(limit)).unwrap();
         let mut companies: Vec<Value> = Vec::with_capacity(top_docs.len());
         for (_score, doc_address) in top_docs {
@@ -97,12 +97,6 @@ impl CikIndex {
         };
         companies
     }
-}
-
-fn remove_special(query: &str) -> String {
-    let mut q = String::from(query);
-    q.retain(|c| c.is_digit(10) || c.is_alphabetic());
-    q
 }
 
 #[cfg(test)]
